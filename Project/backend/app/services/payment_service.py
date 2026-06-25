@@ -3,8 +3,6 @@ import hmac
 import logging
 import uuid
 
-import razorpay
-
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -13,7 +11,16 @@ logger = logging.getLogger(__name__)
 class PaymentService:
     def __init__(self) -> None:
         self.mock = settings.RAZORPAY_MOCK or not settings.RAZORPAY_KEY_ID
+        self.client = None
         if not self.mock:
+            try:
+                import razorpay
+            except ImportError as exc:
+                raise RuntimeError(
+                    "Razorpay SDK is required when Razorpay is enabled. "
+                    "Install razorpay or enable RAZORPAY_MOCK."
+                ) from exc
+
             self.client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
     async def create_order(self, amount: float, job_id: int) -> dict:
